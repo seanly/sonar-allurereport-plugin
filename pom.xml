@@ -10,12 +10,39 @@
   <name>Allure Report Plugin for SonarQube 9.x</name>
   <description>Allure Report Plugin for SonarQube: Custom Metrics and Allure Report Integration</description>
 
+  <developers>
+    <developer>
+      <id>seanly</id>
+      <name>Seanly Liu</name>
+      <email>seanly@opsbox.dev</email>
+      <roles>
+        <role>Developer</role>
+        <role>Maintainer</role>
+      </roles>
+      <timezone>Asia/Shanghai</timezone>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>${github.connection}</connection>
+    <developerConnection>${github.developerConnection}</developerConnection>
+    <url>${github.url}</url>
+    <tag>HEAD</tag>
+  </scm>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonar.apiVersion>9.8.0.203</sonar.apiVersion>
     <sonar.testingHarnessVersion>9.5.0.56709</sonar.testingHarnessVersion>
     <jdk.min.version>11</jdk.min.version>
     <sonar.sources>src/main/java,src/main/js</sonar.sources>
+    
+    <!-- GitHub Properties -->
+    <github.username>seanly</github.username>
+    <github.repository>sonar-allurereport-plugin</github.repository>
+    <github.url>https://github.com/${github.username}/${github.repository}</github.url>
+    <github.connection>scm:git:git://github.com/${github.username}/${github.repository}.git</github.connection>
+    <github.developerConnection>scm:git:ssh://github.com/${github.username}/${github.repository}.git</github.developerConnection>
   </properties>
 
   <dependencies>
