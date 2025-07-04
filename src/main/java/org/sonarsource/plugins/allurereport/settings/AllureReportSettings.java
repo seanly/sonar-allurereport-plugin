@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
  */
 public class AllureReportSettings {
     public static final String NEXUS_URL_KEY = "sonar.allure.nexus.url";
-    public static final String NEXUS_URL_DEFAULT_VALUE = "https://nexus3.opsbox.dev";
+    public static final String NEXUS_URL_DEFAULT_VALUE = "https://nexus.example.com";
 
     public static final String NEXUS_USERNAME_KEY = "sonar.allure.nexus.username";
     public static final String NEXUS_USERNAME_DEFAULT_VALUE = "";

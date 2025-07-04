@@ -12,6 +12,7 @@ services:
       - discovery.type=single-node
       - SONAR_AUTHENTICATOR_DOWNCASE=true
       - SONAR_UPDATECENTER_ACTIVATE=false
+      - SONAR_WEB_JAVAOPTS: '-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=*:5005,suspend=n'
     volumes:
       - sonarqube-data:/opt/sonarqube/data
 
