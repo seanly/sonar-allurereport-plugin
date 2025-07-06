@@ -11,25 +11,24 @@
 
 ## 📋 目录
 
-- [功能特性](#-功能特性)
-- [系统要求](#-系统要求)
-- [安装指南](#-安装指南)
-- [配置说明](#-配置说明)
-- [使用说明](#-使用说明)
-- [开发指南](#-开发指南)
-- [构建说明](#-构建说明)
-- [测试说明](#-测试说明)
-- [贡献指南](#-贡献指南)
-- [许可证](#-许可证)
+- [✨ 功能特性](#-功能特性)
+- [🔧 系统要求](#-系统要求)
+- [🚀 快速开始](#-快速开始)
+- [⚙️ 配置说明](#️-配置说明)
+- [📖 使用指南](#-使用指南)
+- [🛠️ 开发指南](#️-开发指南)
+- [🤝 贡献指南](#-贡献指南)
+- [📄 许可证](#-许可证)
 
 ## ✨ 功能特性
 
-- **自定义指标**: 在 SonarQube 中跟踪 Allure 报告指标
-- **报告集成**: 将 Allure 报告无缝集成到 SonarQube 中
-- **Web 界面**: 基于 React 的现代化 Web 界面用于报告可视化
-- **Nexus3 上传**: 自动上传功能到 Nexus3 仓库
-- **CI/CD 就绪**: 专为现代 CI/CD 管道集成而设计
-- **多语言支持**: 支持多种语言的国际化
+- **📊 自定义指标**: 在 SonarQube 中跟踪 Allure 报告指标
+- **🌐 报告集成**: 将 Allure 报告无缝集成到 SonarQube 中
+- **🎨 现代化界面**: 基于 React 的现代化 Web 界面用于报告可视化
+- **☁️ MinIO 上传**: 自动上传功能到 MinIO S3 兼容存储
+- **🔗 站点地址支持**: 支持自定义站点地址替换 `/minio` 路径
+- **🚀 CI/CD 就绪**: 专为现代 CI/CD 管道集成而设计
+- **🌍 多语言支持**: 支持多种语言的国际化
 
 ## 🔧 系统要求
 
@@ -38,9 +37,9 @@
 - **Node.js**: v16.14.0 或更高版本（用于开发）
 - **Maven**: 3.6 或更高版本
 
-## 🚀 安装指南
+## 🚀 快速开始
 
-### 方法 1: 下载预构建 JAR
+### 方法 1: 下载预构建 JAR（推荐）
 
 1. 从 [GitHub Releases](https://github.com/seanly/sonar-allurereport-plugin/releases) 下载最新版本
 2. 将 JAR 文件复制到 SonarQube 的 `extensions/plugins/` 目录
@@ -72,23 +71,6 @@ docker-compose up -d
 # 默认凭据: admin/admin
 ```
 
-### 方法 4: Docker 插件更新（开发）
-
-用于 Docker 开发工作流：
-
-```bash
-# 构建插件
-mvn clean package
-
-# 将插件 JAR 复制到运行中的 SonarQube 容器
-docker cp target/sonar-allurereport-plugin-9.0.0.jar sonarqube:/opt/sonarqube/extensions/plugins/
-
-# 重启 SonarQube 容器以加载更新的插件
-docker-compose restart sonarqube
-```
-
-**注意**: 此方法非常适合开发，因为它允许您快速测试插件更改而无需重建整个 Docker 镜像。
-
 ## ⚙️ 配置说明
 
 ### 插件设置
@@ -97,85 +79,97 @@ docker-compose restart sonarqube
 
 1. 转到 **管理** > **配置** > **Allure Report**
 2. 配置以下设置：
-   - **Nexus3 URL**: Nexus3 仓库的 URL
-   - **Nexus3 用户名**: 认证用户名
-   - **Nexus3 密码**: 认证密码
-   - **Nexus3 仓库**: 用于存储报告的仓库名称
-   - **上传启用**: 启用/禁用 Nexus3 上传功能
-   - **HTML 报告路径**: Allure HTML 报告目录的路径
-   - **JSON 报告路径**: Allure 结果目录的路径
+
+#### MinIO 配置
+- **MinIO Endpoint**: MinIO 服务器地址（例如：`http://localhost:9000`）
+- **MinIO Access Key**: 认证访问密钥
+- **MinIO Secret Key**: 认证秘密密钥
+- **MinIO Bucket**: 用于存储报告的存储桶名称
+- **MinIO 使用SSL**: 启用/禁用 SSL 连接
+- **MinIO 上传启用**: 启用/禁用 MinIO 上传功能
+
+#### 站点配置
+- **站点地址**: 用于替换 `/minio` 路径的站点地址（例如：`https://example.com`）
+
+#### 报告路径配置
+- **HTML 报告路径**: Allure HTML 报告目录的路径
+- **JSON 报告路径**: Allure 结果目录的路径
 
 ### 项目配置
 
 在 `sonar-project.properties` 中添加以下内容：
 
 ```properties
-# Allure Report 插件配置
-sonar.allure.nexus.upload.enabled=true
-sonar.allure.nexus.url=https://nexus.example.com
-sonar.allure.nexus.username=your-username
-sonar.allure.nexus.password=your-password
-sonar.allure.nexus.repository=allure-reports
+# ===== Allure Report 插件配置 =====
+
+# MinIO 配置
+sonar.allure.minio.upload.enabled=true
+sonar.allure.minio.endpoint=http://localhost:9000
+sonar.allure.minio.accessKey=your-access-key
+sonar.allure.minio.secretKey=your-secret-key
+sonar.allure.minio.bucket=allure-reports
+sonar.allure.minio.useSSL=false
+
+# 站点地址配置（可选）
+sonar.allure.site.address=https://example.com
+
+# 报告路径配置
 sonar.allureReport.htmlReportPath=target/site/allure-maven-plugin
 sonar.allureReport.jsonReportPath=target/allure-results
+
+# 项目版本（MinIO 上传必需）
 sonar.projectVersion=1.0.0
 ```
 
-## 📖 使用说明
+## 📖 使用指南
 
-### 基本使用
+### 基本使用流程
 
 1. **生成 Allure 报告**: 确保您的测试生成 Allure 报告
 2. **配置插件**: 在 SonarQube 中设置插件配置
 3. **运行分析**: 在您的项目上执行 SonarQube 分析
 4. **查看报告**: 通过 SonarQube Web 界面访问 Allure 报告
 
-### Web 界面
+### Web 界面访问
 
 插件提供了一个现代化的 Web 界面，可通过以下方式访问：
 
 - **项目级别**: 导航到您的项目并查找菜单中的 "Allure-Report"
 - **全局级别**: 从主 SonarQube 菜单访问
 
+### URL 生成机制
+
+插件支持两种 URL 生成模式：
+
+#### 1. 站点地址模式（推荐）
+当配置了站点地址时：
+```
+原始路径: /minio/bucket/project/branch/site/index.html
+生成URL: https://example.com/bucket/project/branch/site/index.html
+```
+
+#### 2. Nginx 代理模式
+当未配置站点地址时：
+```
+生成URL: /minio/bucket/project/branch/site/index.html
+```
+
+### MinIO 集成
+
+插件自动将 Allure HTML 报告上传到 MinIO：
+
+- **上传路径**: `{bucket}/{project-key}/{branch}/site/`
+- **文件类型**: HTML、CSS、JS、图像和所有其他报告资源
+- **认证**: 使用配置的 MinIO 凭据进行 S3 兼容认证
+
 ### 工作原理
 
 插件在 SonarQube 分析期间自动工作：
 
 1. **分析期间**: 插件的传感器 (`AllureReportSensor`) 在 SonarQube 分析期间运行
-2. **HTML 报告上传**: 自动将整个 Allure HTML 报告目录上传到 Nexus3
-3. **URL 生成**: 创建一个指向上传报告 `index.html` 的 Nexus3 URL
-4. **指标存储**: 将 Nexus3 URL 存储为 SonarQube 指标以供显示
-
-### Nexus3 集成
-
-插件自动将 Allure HTML 报告上传到 Nexus3：
-
-- **上传路径**: `{nexus-url}/repository/{repository}/{project-key}/{branch}/site/`
-- **报告 URL**: `{nexus-url}/repository/{repository}/{project-key}/{branch}/site/index.html`
-- **文件类型**: HTML、CSS、JS、图像和所有其他报告资源
-- **认证**: 使用配置的 Nexus3 凭据进行基本认证
-
-### 配置属性
-
-在 `sonar-project.properties` 中配置插件：
-
-```properties
-# 启用/禁用 Nexus3 上传
-sonar.allure.nexus.upload.enabled=true
-
-# Nexus3 配置
-sonar.allure.nexus.url=https://nexus.example.com
-sonar.allure.nexus.username=your-username
-sonar.allure.nexus.password=your-password
-sonar.allure.nexus.repository=allure-reports
-
-# Allure 报告路径
-sonar.allureReport.htmlReportPath=target/site/allure-maven-plugin
-sonar.allureReport.jsonReportPath=target/allure-results
-
-# 项目版本（Nexus3 上传必需）
-sonar.projectVersion=1.0.0
-```
+2. **HTML 报告上传**: 自动将整个 Allure HTML 报告目录上传到 MinIO
+3. **URL 生成**: 根据配置创建指向 MinIO 报告的 URL
+4. **指标存储**: 将生成的 URL 存储为 SonarQube 指标以供显示
 
 ## 🛠️ 开发指南
 
@@ -257,58 +251,32 @@ docker-compose logs -f sonarqube
 - 🐛 **易于调试**: 直接访问容器日志
 - 🧹 **清洁环境**: 隔离的开发设置
 
-## 🔨 构建说明
-
-### 完整构建
+### 构建说明
 
 ```bash
-# 构建完整插件（Java + 前端）
+# 完整构建（Java + 前端）
 mvn clean package
-```
 
-### 仅前端
-
-```bash
-# 构建前端资源
+# 仅前端构建
 npm run build
-```
 
-### 开发构建
-
-```bash
-# 使用开发优化进行构建
+# 开发构建
 npm run build:dev
 ```
 
-## 🧪 测试说明
-
-### Java 测试
+### 测试说明
 
 ```bash
-# 运行 Java 单元测试
+# Java 测试
 mvn test
-
-# 运行覆盖率测试
 mvn test jacoco:report
-```
 
-### JavaScript 测试
-
-```bash
-# 运行 Jest 测试
+# JavaScript 测试
 npm test
-
-# 运行覆盖率测试
 npm run test:coverage
-
-# 在监视模式下运行测试
 npm run test:watch
-```
 
-### 集成测试
-
-```bash
-# 运行集成测试
+# 集成测试
 mvn verify
 ```
 

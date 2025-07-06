@@ -1,20 +1,59 @@
-
 name: sonarqube
 
 services:
-  sonarqube:
-    image: registry.cn-chengdu.aliyuncs.com/seanly/appset:sonarqube-9.9.8-community-1-arm64
+  nginx:
+    image: seanly/appset:nginx
     restart: unless-stopped
     ports:
-      - 9000:9000
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - sonarqube
+      - minio
+    networks:
+      - sonar-network
+
+  sonarqube:
+    image: seanly/appset:sonarqube-9.9.8-community-1
+    restart: unless-stopped
+    expose:
+      - "9000"
+      - "5005"
     environment:
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
       - discovery.type=single-node
       - SONAR_AUTHENTICATOR_DOWNCASE=true
       - SONAR_UPDATECENTER_ACTIVATE=false
-      - SONAR_WEB_JAVAOPTS: '-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=*:5005,suspend=n'
+      - SONAR_WEB_JAVAOPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=*:5005,suspend=n
     volumes:
       - sonarqube-data:/opt/sonarqube/data
+      - ./target/sonar-allurereport-plugin-9.0.0.jar:/opt/sonarqube/extensions/plugins/sonar-allurereport-plugin-9.0.0.jar
+    networks:
+      - sonar-network
+
+  minio:
+    container_name: minio
+    image: seanly/appset:minio-2022-01-04-2
+    restart: unless-stopped
+    volumes:
+      - minio-data:/data
+    ports:
+      - 9100:9000
+    expose:
+      - "9000"
+      - "9001"
+    environment:
+      MINIO_ROOT_USER: Zbk1jhOJI4U3TNB84p0H
+      MINIO_ROOT_PASSWORD: ErqjEnaOBKmUFi13qY0e
+    command: server /data --console-address ":9001"
+    networks:
+      - sonar-network
 
 volumes:
   sonarqube-data:
+  minio-data:
+
+networks:
+  sonar-network:
+    driver: bridge

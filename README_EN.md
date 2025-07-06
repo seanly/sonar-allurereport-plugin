@@ -27,7 +27,7 @@ A comprehensive Allure Report integration plugin for SonarQube that provides cus
 - **Custom Metrics**: Track Allure report metrics within SonarQube
 - **Report Integration**: Seamlessly integrate Allure reports into SonarQube
 - **Web Interface**: Modern React-based web interface for report visualization
-- **Nexus3 Upload**: Automated upload capabilities to Nexus3 repository
+- **MinIO Upload**: Automated upload capabilities to MinIO S3-compatible storage
 - **CI/CD Ready**: Designed for integration with modern CI/CD pipelines
 - **Multi-language Support**: Internationalization support for multiple languages
 
@@ -97,11 +97,12 @@ The plugin can be configured through SonarQube's administration interface:
 
 1. Go to **Administration** > **Configuration** > **Allure Report**
 2. Configure the following settings:
-   - **Nexus3 URL**: URL for Nexus3 repository
-   - **Nexus3 Username**: Authentication username
-   - **Nexus3 Password**: Authentication password
-   - **Nexus3 Repository**: Repository name for storing reports
-   - **Upload Enabled**: Enable/disable Nexus3 upload functionality
+   - **MinIO Endpoint**: URL for MinIO server
+   - **MinIO Access Key**: Authentication access key
+   - **MinIO Secret Key**: Authentication secret key
+   - **MinIO Bucket**: Bucket name for storing reports
+   - **MinIO Use SSL**: Enable/disable SSL connection
+   - **Upload Enabled**: Enable/disable MinIO upload functionality
    - **HTML Report Path**: Path to Allure HTML report directory
    - **JSON Report Path**: Path to Allure results directory
 
@@ -111,11 +112,12 @@ Add the following to your `sonar-project.properties`:
 
 ```properties
 # Allure Report Plugin Configuration
-sonar.allure.nexus.upload.enabled=true
-sonar.allure.nexus.url=https://nexus.example.com
-sonar.allure.nexus.username=your-username
-sonar.allure.nexus.password=your-password
-sonar.allure.nexus.repository=allure-reports
+sonar.allure.minio.upload.enabled=true
+sonar.allure.minio.endpoint=http://localhost:9000
+sonar.allure.minio.accessKey=your-access-key
+sonar.allure.minio.secretKey=your-secret-key
+sonar.allure.minio.bucket=allure-reports
+sonar.allure.minio.useSSL=false
 sonar.allureReport.htmlReportPath=target/site/allure-maven-plugin
 sonar.allureReport.jsonReportPath=target/allure-results
 sonar.projectVersion=1.0.0
@@ -142,38 +144,72 @@ The plugin provides a modern web interface accessible through:
 The plugin works automatically during SonarQube analysis:
 
 1. **During Analysis**: The plugin's sensor (`AllureReportSensor`) runs during SonarQube analysis
-2. **HTML Report Upload**: Automatically uploads the entire Allure HTML report directory to Nexus3
-3. **URL Generation**: Creates a Nexus3 URL pointing to the uploaded report's `index.html`
-4. **Metric Storage**: Stores the Nexus3 URL as a SonarQube metric for display
+2. **HTML Report Upload**: Automatically uploads the entire Allure HTML report directory to MinIO
+3. **URL Generation**: Creates a MinIO URL pointing to the uploaded report's `index.html`
+4. **Metric Storage**: Stores the MinIO URL as a SonarQube metric for display
 
-### Nexus3 Integration
+### MinIO Integration
 
-The plugin automatically uploads Allure HTML reports to Nexus3:
+The plugin automatically uploads Allure HTML reports to MinIO:
 
-- **Upload Path**: `{nexus-url}/repository/{repository}/{project-key}/{branch}/site/`
-- **Report URL**: `{nexus-url}/repository/{repository}/{project-key}/{branch}/site/index.html`
+- **Upload Path**: `{endpoint}/{bucket}/{project-key}/{branch}/site/`
+- **Report URL**: `{endpoint}/{bucket}/{project-key}/{branch}/site/index.html`
 - **File Types**: HTML, CSS, JS, images, and all other report assets
-- **Authentication**: Basic auth with configured Nexus3 credentials
+- **Authentication**: S3-compatible authentication with configured MinIO credentials
+
+### MinIO Proxy Service
+
+The plugin provides a MinIO proxy service that allows secure access to MinIO content through SonarQube:
+
+#### API Endpoints
+
+1. **Path Proxy**: `/api/allurereport/minio/{bucket}/{projectKey}/{branch}/site/{file}`
+   - Simplified path format without endpoint
+   - Example: `/api/allurereport/minio/allure-reports/my-project/main/site/index.html`
+
+2. **File Proxy**: `/api/allurereport/minio/proxy`
+   - Parameters: `projectKey`, `branch`, `path` (optional, defaults to index.html)
+   - Example: `/api/allurereport/minio/proxy?projectKey=my-project&branch=main&path=index.html`
+
+3. **Bucket Proxy**: `/api/allurereport/minio/bucket`
+   - Parameters: `projectKey`, `branch`, `path` (optional)
+   - Example: `/api/allurereport/minio/bucket?projectKey=my-project&branch=main&path=site/index.html`
+
+4. **Bucket List**: `/api/allurereport/minio/list`
+   - Parameters: `projectKey`, `branch`, `prefix` (optional)
+   - Example: `/api/allurereport/minio/list?projectKey=my-project&branch=main&prefix=site/`
+   - Returns: JSON format file list
+
+#### Benefits
+
+- **Security**: Access through SonarQube proxy, avoiding direct exposure of MinIO endpoints
+- **Unified Authentication**: Uses SonarQube's authentication mechanism
+- **Access Control**: Can control access based on SonarQube permissions
+- **CORS Friendly**: Avoids cross-origin issues
 
 ### Configuration Properties
 
 Configure the plugin in your `sonar-project.properties`:
 
 ```properties
-# Enable/disable Nexus3 upload
-sonar.allure.nexus.upload.enabled=true
+# Enable/disable MinIO upload
+sonar.allure.minio.upload.enabled=true
 
-# Nexus3 configuration
-sonar.allure.nexus.url=https://nexus.example.com
-sonar.allure.nexus.username=your-username
-sonar.allure.nexus.password=your-password
-sonar.allure.nexus.repository=allure-reports
+# MinIO configuration
+sonar.allure.minio.endpoint=http://localhost:9000
+sonar.allure.minio.accessKey=your-access-key
+sonar.allure.minio.secretKey=your-secret-key
+sonar.allure.minio.bucket=allure-reports
+sonar.allure.minio.useSSL=false
+
+# MinIO proxy configuration
+sonar.allure.minio.use.proxy=true
 
 # Allure report paths
 sonar.allureReport.htmlReportPath=target/site/allure-maven-plugin
 sonar.allureReport.jsonReportPath=target/allure-results
 
-# Project version (required for Nexus3 upload)
+# Project version (required for MinIO upload)
 sonar.projectVersion=1.0.0
 ```
 

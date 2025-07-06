@@ -9,7 +9,7 @@ import org.sonar.api.scanner.sensor.ProjectSensor;
 import org.sonar.api.utils.log.Profiler;
 import org.sonarsource.plugins.allurereport.settings.AllureReportSettings;
 import org.sonarsource.plugins.allurereport.uitls.AllureReportUtils;
-import org.sonarsource.plugins.allurereport.uitls.Nexus3Uploader;
+import org.sonarsource.plugins.allurereport.uitls.MinIOUploader;
 
 /**
  * Sensor that processes Allure test reports during SonarQube analysis.
@@ -48,13 +48,13 @@ public class AllureReportSensor implements ProjectSensor {
 
     private void uploadHTMLReport(SensorContext sensorContext) {
         try {
-            // 检查是否启用Nexus3上传
-            boolean nexusUploadEnabled = sensorContext.config()
-                    .getBoolean(AllureReportSettings.NEXUS_UPLOAD_ENABLED_KEY)
-                    .orElse(AllureReportSettings.NEXUS_UPLOAD_ENABLED_DEFAULT_VALUE);
+            // 检查是否启用MinIO上传
+            boolean minioUploadEnabled = sensorContext.config()
+                    .getBoolean(AllureReportSettings.MINIO_UPLOAD_ENABLED_KEY)
+                    .orElse(AllureReportSettings.MINIO_UPLOAD_ENABLED_DEFAULT_VALUE);
             
-            if (!nexusUploadEnabled) {
-                LOGGER.info("Nexus3上传功能已禁用，跳过上传");
+            if (!minioUploadEnabled) {
+                LOGGER.info("MinIO上传功能已禁用，跳过上传");
                 return;
             }
             
@@ -69,32 +69,44 @@ public class AllureReportSensor implements ProjectSensor {
             String branchName = sensorContext.config().get("sonar.branch.name").orElse("main");
             
             if (projectVersion.isEmpty()) {
-                LOGGER.warn("项目版本未设置，无法上传到Nexus3");
+                LOGGER.warn("项目版本未设置，无法上传到MinIO");
                 return;
             }
             
-            LOGGER.info("准备上传HTML报告到Nexus3 - 项目: {}, 版本: {}, 分支: {}, 路径: {}", 
+            LOGGER.info("准备上传HTML报告到MinIO - 项目: {}, 版本: {}, 分支: {}, 路径: {}", 
                     projectKey, projectVersion, branchName, htmlReportPath);
             
-            // 创建Nexus3上传器并执行上传
-            Nexus3Uploader uploader = new Nexus3Uploader(sensorContext.config());
+            // 创建MinIO上传器并执行上传
+            MinIOUploader uploader = new MinIOUploader(sensorContext.config());
             boolean uploadSuccess = uploader.uploadHtmlReport(htmlReportPath, projectKey, projectVersion, branchName);
             
             if (uploadSuccess) {
-                LOGGER.info("HTML报告上传到Nexus3成功");
+                LOGGER.info("HTML报告上传到MinIO成功");
                 
-                // 生成Nexus3报告URL并保存到metrics
-                String nexusUrl = sensorContext.config()
-                        .get(AllureReportSettings.NEXUS_URL_KEY)
-                        .orElse(AllureReportSettings.NEXUS_URL_DEFAULT_VALUE);
-                String repository = sensorContext.config()
-                        .get(AllureReportSettings.NEXUS_REPOSITORY_KEY)
-                        .orElse(AllureReportSettings.NEXUS_REPOSITORY_DEFAULT_VALUE);
+                String allureReportUrl;
+                // 生成nginx代理URL
+                String bucket = sensorContext.config()
+                        .get(AllureReportSettings.MINIO_BUCKET_KEY)
+                        .orElse(AllureReportSettings.MINIO_BUCKET_DEFAULT_VALUE);
                 
-                // 构建报告首页URL
-                String baseUrl = nexusUrl.endsWith("/") ? nexusUrl.substring(0, nexusUrl.length() - 1) : nexusUrl;
-                String allureReportUrl = String.format("%s/repository/%s/%s/%s/site/index.html", 
-                        baseUrl, repository, projectKey, branchName);
+                // 获取站点地址配置
+                String siteAddress = sensorContext.config()
+                        .get(AllureReportSettings.SITE_ADDRESS_KEY)
+                        .orElse(AllureReportSettings.SITE_ADDRESS_DEFAULT_VALUE);
+                
+                // 生成基础路径（不包含minio）
+                String basePath = String.format("/%s/%s/%s/site/index.html", 
+                        bucket, projectKey, branchName);
+                
+                // 如果配置了站点地址，则使用完整URL
+                if (!siteAddress.isEmpty()) {
+                    allureReportUrl = siteAddress + basePath;
+                    LOGGER.info("使用站点地址URL访问内容: {}", allureReportUrl);
+                } else {
+                    // 没有配置站点地址时，添加 /minio 前缀用于nginx代理
+                    allureReportUrl = "/minio" + basePath;
+                    LOGGER.info("使用nginx代理URL访问内容: {}", allureReportUrl);
+                }
                 
                 // 保存到metrics
                 sensorContext.<String>newMeasure()
@@ -105,7 +117,7 @@ public class AllureReportSensor implements ProjectSensor {
                 
                 LOGGER.info("Allure报告URL已保存到metrics: {}", allureReportUrl);
             } else {
-                LOGGER.error("HTML报告上传到Nexus3失败");
+                LOGGER.error("HTML报告上传到MinIO失败");
             }
             
         } catch (Exception e) {

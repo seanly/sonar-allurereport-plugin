@@ -6,6 +6,7 @@ import org.sonarsource.plugins.allurereport.measures.AllureReportSensor;
 import org.sonarsource.plugins.allurereport.settings.AllureReportSettings;
 import org.sonarsource.plugins.allurereport.web.AllureReportPage;
 
+
 import java.util.Arrays;
 
 public final class AllureReportPlugin implements Plugin {
