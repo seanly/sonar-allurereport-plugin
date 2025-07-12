@@ -1,5 +1,6 @@
 package org.sonarsource.plugins.allurereport.measures;
 
+import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
 import org.sonar.api.utils.log.Logger;
@@ -15,7 +16,7 @@ import org.sonarsource.plugins.allurereport.uitls.MinIOUploader;
  * Sensor that processes Allure test reports during SonarQube analysis.
  * Extracts test metrics and stores report files for web display.
  */
-public class AllureReportSensor implements ProjectSensor {
+public class AllureReportSensor implements Sensor {
 
     private static final Logger LOGGER = Loggers.get(AllureReportSensor.class);
     private static final String ALLURE_RESULTS_DIR = "allure-results";
@@ -31,7 +32,9 @@ public class AllureReportSensor implements ProjectSensor {
 
     @Override
     public void describe(SensorDescriptor sensorDescriptor) {
-        sensorDescriptor.name(SENSOR_NAME);
+        sensorDescriptor.name(SENSOR_NAME)
+                .onlyOnLanguage("java")
+                .createIssuesForRuleRepositories("allure");
     }
 
     @Override
